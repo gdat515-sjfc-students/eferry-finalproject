@@ -1,6 +1,6 @@
 # eferry-finalproject 
 
-##Final project
+Final project
 
 Statement of Work: My final project will use visualization to explore avacoado data. Using a free kaggle dataset as well as publicly availble Hass Avocado Board data containing weekly 2018 reatil scan data for National Retail volume and price,  I will show a series of charts and graphics which attempt to understand the realationship between consumers and purchasing behavior. 
 
