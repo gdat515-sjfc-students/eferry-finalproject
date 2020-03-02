@@ -29,10 +29,12 @@ data
 
 ```{r cars}
 
+#load data here 
 
+##avocado 
 rm(list=ls())
 avocado<- fread("avocado.csv", header = TRUE, data.table = FALSE) 
-str(avocado)
+#str(avocado)
 
 #changing date character to a date 
 avocado <- avocado %>%
@@ -40,31 +42,31 @@ avocado <- avocado %>%
 # convert year to factor
 avocado$year <- as.factor(avocado$year)
 
-# Taking a look at the TotalVolume column, I noticed the TotalBags column was added to the TotalVolume column skewing the actual volume
-# Updating TotalVolume column
+# Taking a look at the TotalVolume column
 avocado$totalsales <- avocado$totalsales - avocado$TotalBags
 
-# renaming & cleaning up columns
 avocado <- avocado %>% 
   rename(SmallHass = `4046`, LargeHass = `4225`, XLargeHass = `4770`, TotalVolume = totalsales)%>%
   gather(AvocadoSize, AvocadoVolume, c(SmallHass, LargeHass, XLargeHass))%>%
   gather(BagsSize, TotalBags, c(SmallBags, LargeBags, XLargeBags))
 
+
+
 # Arranging by Date column       
 avocado <- arrange(avocado, Date)
 
-# Taking a deeper look into region column
-unique(avocado$region)
+avocado %>% sample_n(1000)
 
+#looking at region
 avocado_region <- avocado %>% filter(region %in% c("California", "GreatLakes", "Midsouth", "Northeast", "Plains", "SouthCentral", "Southeast",  "West"))
 
-# subsetting data by cities
-avocado_city <- avocado %>% filter(!(region %in% c("California", "GreatLakes", "Midsouth", "Northeast", "Plains", "SouthCentral", "Southeast",  "West", "TotalUS")))
+avocado%>% sample_n(1000)
+
 
 # subsetting data by Total US
 avocado_totalUS <- avocado %>% filter(region == "TotalUS")
-
-
+avocado_totalUS %>% sample_n(936)
+gc()
 
 ```
 
@@ -90,23 +92,22 @@ DT::datatable(avocado, options = list(
 In the following analysis I will look to find the most popular avocado type based on historical sales(size,type), the average avocado price that generate the most sales volume and the region that has historically consumed the most avocados to date. 
 
 
-```{r,include=TRUE}
-knitr::include_graphics('/Users/emilyferry/Desktop/data_vis/data_vis/Final/Final/clipart.png')
-```
 
 Organic vs conventional (Plotly)
 ```{r}
 
 options(scipen = 1000000)
-plot1<-ggplot(data = avocado, aes(x = AveragePrice, y = TotalVolume, color = type))+
+  
+plot1<- avocado %>% 
+  sample_n(1000) %>% 
+  ggplot(data = ., aes(x = AveragePrice, y = TotalVolume, color = type))+
       geom_point()+
-      labs(x = "Average Avocado Price", y = "Total Sales", title = "Total Sales Volume by Average Avocado Price", subtitle = "Organic Vs. Conventional",  caption = "Kaggle:Avocado Dataset")+
+      labs(x = "Average Avocado Price", y = "Total Sales", title = "Total Sales Volume by Average Avocado Price", subtitle = "Organic Vs. Conventional", caption = "Kaggle:Avocado Dataset")+
   scale_y_continuous(labels = scales::dollar)+
   theme_minimal() +
   scale_color_manual(values=c("#CCFF66","#333300"))
 
-#ggplotly(plot1)
-
+ggplotly(plot1)
        
 ```
 
@@ -124,17 +125,18 @@ avocado_region %>%
 
 ```
 
-Avocado sales by size of avocado 
+Avocado sales by region
 ```{r}
-avocado_region %>%
-    dplyr::filter(AvocadoSize1 %in% input$AvocadoSize1)%>%
-  ggplot(aes(x = reorder(region, -AvocadoVolume), y = AvocadoVolume/1000000, fill = AvocadoSize)) +
-  geom_col(position = "stack") +
-  theme_minimal() +
-  labs(x = "Region", y = "Total Volume (in Milions)") +
-  scale_fill_manual(values = c("#FFFF99","#CCFF66" ,"#333300"), name = "Avocado Size") +
-  ggtitle("Regional Avocado Sales", caption= "Kaggle: Avocado Dataset")
-          
+avocado_region %>% 
+  filter(type == "conventional") %>%
+  ggplot(aes(x = date, y = TotalVolume,color = region)) +
+  #geom_line(size = 0.75) +
+  labs(x = "Date", y = "Total Sales", title = "Total Sales By Region", subtitle = "Line Plot") +
+  theme_light() +
+  theme(panel.border = element_rect(color = "grey35")) +
+  scale_y_continuous(labels = scales::dollar) +
+  geom_smooth(aes(y = TotalVolume), se = F, span = 0.4)
+  
 ```
 
 
