@@ -102,11 +102,21 @@ Row {data-width=350}
 
   This Data set contains Historical Data on avocado prices and sales volume accross multiple U.S. makets. The dataset was found on Kaggle, while the data originates from the HASS Avocado Board (https://hassavocadoboard.com). 
 
-  Produce 
+  In recent years, avocado sales have taken off (thanks to Millenials... I myself consumed three avocados in the week and a half I worked on this dashboard...). In fact, with some clever marketing of Guacamole during the NFL, avocados have certainly had their time to shine, By looking at historical sales of produce we can hope to realize some of the following: 
+  
+  -Future demand of a certain product category (ie. small vs. large avocados or organic vs. convential produce)
+  -Future Pricing 
+  -Potential growth markets
+  -Better informed Marketing Strategies 
+
+In the following analysis I will look to find the most popular avocado type based on historical sales(size,type), the average avocado price that generate the most sales volume and the region that has historically consumed the most avocados to date. 
 
 
+```{r,include=TRUE}
+knitr::include_graphics('/Users/emilyferry/Desktop/data_vis/data_vis/Final/Final/clipart.png')
+```
 
-Avocado Sales By Region 
+###Sales 
 =============================
 Inputs {.sidebar}
 -------------------------------------
@@ -124,7 +134,7 @@ inputPanel(
 Row 
 --------------------------------------
 
-###Interactive Plot 
+###Avocado Sales by Size of Avocado
 
 ```{r}
 renderPlot({
@@ -144,7 +154,7 @@ avocado_region %>%
 
 South Central is the higest purchaser of conventional Hass and small Hass while the Northeast purchase the most large Hass. In comparison to small and large Hass, there is not a high volume of extra large Hass purchases.
 
-Forcasting Sales 
+###Regional Avocado Sales (Conventional Avocados)
 
 =============================================
 
@@ -179,4 +189,6 @@ avocado_region %>%
 })
   
 ```
+
+
 

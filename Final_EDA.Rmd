@@ -16,203 +16,19 @@ library(dplyr)
 library(tidyr)
 library(ISLR)
 library(leaflet)
-
+library(data.table)
 library(RColorBrewer)
+library(tsdl)
+library(forecast)
 req.packages<-c("leaflet","tidycensus","tidyverse","ggthemes","ggExtra","scales")
 
-# Installations from CRAN
-c("data.table",     # Fast data reading; shift()
-  "dtplyr",         # dplyr done with data.table
-  "forecast",       # forecasting
-  "here",           # Better folder structure
-  "MASS",           # fitdistr()-> the one fun we care about, will give parameteres for the dist. and give info criteria 
-  "MTS",            # Multivariate time series
-  "plotly",         # For 3-d and interactive plots
-  "tidyverse",      # For data manipulation
-  "tseries",        # Some time series functions
-  "xts",            # More time series functions soo much stuff in these last three packages 
-  "zoo"             # Still more time series functions
-  ) -> package_names  
-
-for(package_name in package_names) {
-  if(!is.element(package_name, installed.packages()[,1])) {
-     install.packages(package_name,
-                      repos = "http://cran.mtu.edu/")
-  }
-  library(package_name, character.only=TRUE,
-          quietly=TRUE,verbose=FALSE)
-}
-
-install.packages("tidycensus")
-
-library(tidycensus)
-install.packages("rlang")
-library(rlang)
 
 ```
 
+data
 
 ```{r cars}
 
-rm(list=ls())
-avo<- fread("avocado.csv", header = TRUE, data.table = FALSE) 
-str(avocado)
-
-#changing date character to a date 
-avo <- avo %>%
-  mutate(date = as.Date(Date, format = "%m/%d/%y"))
-
-avo18<- avo %>% 
-  filter( avo$date >= "2018-01-01")
-
-
-options(scipen = 1000000)
-ggplot(data = avo ,aes(x = AveragePrice, y = totalsales))+
-  geom_point()
-
-
-ggplot(avo, aes(y=AveragePrice,x=year)) +
-  geom_bar()
-
-averaged_avocado <- avo %>%
-  group_by(date, region, type) %>% 
-  summarise(AveragePrice = mean(AveragePrice),
-            totalsales = mean(totalsales),
-            TotalBags = mean(TotalBags))
-averaged_avocado
-
-
-
-avocados
-
-```
-
-```{r}
-color.pal <-colorNumeric(palette ="viridis", domain = avocados$totalsales)
-
-avocados %>%
-  top_n(50,totalsales) %>%
-  rename(region = GEOID) %>% 
-  mutate(region = as.factor(region))
-table(avocados$region)
-
-
-  top_n(20,estimate) %>%
-  rename(county= GEOID)%>%
-  
-
-
-
-
-  ggplot(data=avocados, aes(y = reorder(region,totalsales), x=totalsales))+
-  geom_point()+
-  theme_tufte()+
-  theme(axis.title = element_blank())+
-  scale_x_continuous(labels = scales::dollar)
-  
-  
-  
-  
-  
-  sales.map <- leaflet(data = avocados)%>%
-  addTiles()%>%
-  setView(lng = -77.509, lat= 43.1157,zoom = 8) %>%
-  addPolygons(fillColor = ~color.pal(avocados$totalsales), #addpolygons is the geometry
-             fillOpacity = 0.9,
-             fill= TRUE, 
-             weight =0.7,
-             smoothFactor = 0.3,
-             color = "black",
-             #highlight = highlightOptions(weight = 2,
-                                        #  color = "Black",
-                                         # FillOpacity = 0.9, 
-                                          #bringToFront = FALSE),
-         popup = ~paste("<b>Region: </b>", region, "<br>",
-               "<b>Median Household Income: </b>", dollar(totalsales))
-)%>%
-  addLegend(position = "topleft", 
-            pal = color.pal, 
-            values= ~avocados$totalsales, 
-            title = "Median Income")
-
-
-
-  
-  
-  
-  
-
-
-```
-
-```{r}
-
-
-
-
-```
-
-
-
-```{r}
-options(scipen = 1000000)
-
-options(scipen = 1000000)
-plot1<-ggplot(data = avocado, aes(x = AveragePrice, y = TotalVolume, color = type))+
-      geom_point()+
-      labs(x = "Average Avocado Price", y = "Total Sales", title = "Total Sales Volume by Average Avocado Price", subtitle = "Organic Vs. Conventional", caption = "Kaggle:Avocado Dataset")+
-  scale_y_continuous(labels = scales::dollar)+
-  theme_minimal() +
-  scale_color_manual(values=c("#CCFF66","#333300"))
-
-ggplotly(plot1)
-
-       
-ggplotly(plot1)
-
-
-
-
-
-ggplot(data = data) +
- geom_point(mapping = aes(x = AveragePrice, y = Total.Volume, color=type))
-
-
-
-
-
-options(scipen = 1000000)
-avocado_region %>% 
-  filter(type == "conventional") %>%
-  ggplot(aes(x = date)) +
-  geom_line(aes(y = TotalVolume), size = 0.75) +
-  labs(x = "Date", y = "Total Sales", title = "Total Sales By Region", subtitle = "Line Plot", caption = "Kaggle:Avocado Dataset") +
-  theme_light() +
-  theme(panel.border = element_rect(color = "grey35")) +
-  scale_y_continuous(labels = scales::dollar) +
-  geom_smooth(aes(y = TotalVolume), se = F, span = 0.4)
-
-
-
-
-
-
-```
-
-```{r}
-ts(avo$totalsales, 
-   start = c(2018,1), frequency = 12)-> avo_ts
-
-plot(avo_ts)
-hist(avo_ts)
-decompose(avo_ts)->dec_avo
-plot(dec_avo)
-avo_ts %>% forecast %>% plot
-
-
-```
-
-```{r}
 
 rm(list=ls())
 avocado<- fread("avocado.csv", header = TRUE, data.table = FALSE) 
@@ -248,17 +64,101 @@ avocado_city <- avocado %>% filter(!(region %in% c("California", "GreatLakes", "
 # subsetting data by Total US
 avocado_totalUS <- avocado %>% filter(region == "TotalUS")
 
+
+
+```
+
+
+### The Data 
+
+```{r}
+DT::datatable(avocado, options = list(
+  pageLength = 25
+))
+```
+
+
+  This Data set contains Historical Data on avocado prices and sales volume accross multiple U.S. makets. The dataset was found on Kaggle, while the data originates from the HASS Avocado Board (https://hassavocadoboard.com). 
+
+  In recent years, avocado sales have taken off (thanks to Millenials... I myself consumed three avocados in the week and a half I worked on this dashboard...). In fact, with some clever marketing of Guacamole during the NFL, avocados have certainly had their time to shine, By looking at historical sales of produce we can hope to realize some of the following: 
+  
+  -Future demand of a certain product category (ie. small vs. large avocados or organic vs. convential produce)
+  -Future Pricing 
+  -Potential growth markets
+  -Better informed Marketing Strategies 
+
+In the following analysis I will look to find the most popular avocado type based on historical sales(size,type), the average avocado price that generate the most sales volume and the region that has historically consumed the most avocados to date. 
+
+
+```{r,include=TRUE}
+knitr::include_graphics('/Users/emilyferry/Desktop/data_vis/data_vis/Final/Final/clipart.png')
+```
+
+Organic vs conventional (Plotly)
+```{r}
+
+options(scipen = 1000000)
+plot1<-ggplot(data = avocado, aes(x = AveragePrice, y = TotalVolume, color = type))+
+      geom_point()+
+      labs(x = "Average Avocado Price", y = "Total Sales", title = "Total Sales Volume by Average Avocado Price", subtitle = "Organic Vs. Conventional",  caption = "Kaggle:Avocado Dataset")+
+  scale_y_continuous(labels = scales::dollar)+
+  theme_minimal() +
+  scale_color_manual(values=c("#CCFF66","#333300"))
+
+#ggplotly(plot1)
+
+       
+```
+
+avocado sales by region 
+```{r}
+
 avocado_region %>%
   ggplot(aes(x = reorder(region, -AvocadoVolume), y = AvocadoVolume/1000000, fill = AvocadoSize)) +
   geom_col(position = "stack") +
   theme_minimal() +
   labs(x = "Region", y = "Total Volume (in Milions)") +
   scale_fill_manual(values = c("#FFFF99","#CCFF66" ,"#333300"), name = "Avocado Size") +
-  ggtitle("Regional Single Hass Sales")
-
-
-
+  ggtitle("Regional Single Avocado Sales")
 
 
 ```
+
+Avocado sales by size of avocado 
+```{r}
+avocado_region %>%
+    dplyr::filter(AvocadoSize1 %in% input$AvocadoSize1)%>%
+  ggplot(aes(x = reorder(region, -AvocadoVolume), y = AvocadoVolume/1000000, fill = AvocadoSize)) +
+  geom_col(position = "stack") +
+  theme_minimal() +
+  labs(x = "Region", y = "Total Volume (in Milions)") +
+  scale_fill_manual(values = c("#FFFF99","#CCFF66" ,"#333300"), name = "Avocado Size") +
+  ggtitle("Regional Avocado Sales", caption= "Kaggle: Avocado Dataset")
+          
+```
+
+
+
+
+
+
+
+#forecasting:honestly this was alot - sort of gave up on this notion 
+
+```{r}
+avocado_totalUS
+
+ts(avocado$TotalVolume,
+   start = c(2015,1), frequency = 12)->ts_avo
+
+plot(ts_avo)
+
+
+ts_avo%>% forecast(level= c(80,95))->dum2
+plot(dum2)
+
+
+```
+
+
 
