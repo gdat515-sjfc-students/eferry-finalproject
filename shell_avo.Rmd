@@ -1,0 +1,182 @@
+---
+title: "Avocado Sales Data"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+runtime: shiny 
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(ggthemes)
+library(shiny)
+library(plotly)
+library(knitr)
+library(data.table)
+library(tseries)
+library(forecast)
+library(dplyr)
+
+```
+
+
+```{r avo data, include=FALSE}
+#load data here 
+
+##avocado 
+rm(list=ls())
+avocado<- fread("avocado.csv", header = TRUE, data.table = FALSE) 
+str(avocado)
+
+#changing date character to a date 
+avocado <- avocado %>%
+  mutate(date = as.Date(Date, format = "%m/%d/%y"))
+# convert year to factor
+avocado$year <- as.factor(avocado$year)
+
+# Taking a look at the TotalVolume column, I noticed the TotalBags column was added to the TotalVolume column skewing the actual volume
+# Updating TotalVolume column
+avocado$totalsales <- avocado$totalsales - avocado$TotalBags
+
+# renaming & cleaning up columns
+avocado <- avocado %>% 
+  rename(SmallHass = `4046`, LargeHass = `4225`, XLargeHass = `4770`, TotalVolume = totalsales)%>%
+  gather(AvocadoSize, AvocadoVolume, c(SmallHass, LargeHass, XLargeHass))%>%
+  gather(BagsSize, TotalBags, c(SmallBags, LargeBags, XLargeBags))
+
+# Arranging by Date column       
+avocado <- arrange(avocado, Date)
+
+# Taking a deeper look into region column
+unique(avocado$region)
+
+avocado_region <- avocado %>% filter(region %in% c("California", "GreatLakes", "Midsouth", "Northeast", "Plains", "SouthCentral", "Southeast",  "West"))
+
+# subsetting data by cities
+avocado_city <- avocado %>% filter(!(region %in% c("California", "GreatLakes", "Midsouth", "Northeast", "Plains", "SouthCentral", "Southeast",  "West", "TotalUS")))
+
+# subsetting data by Total US
+avocado_totalUS <- avocado %>% filter(region == "TotalUS")
+
+
+```
+
+Overview of the Data 
+==============================
+
+Row {data-width=650}
+---------------------------------------
+### Organic Vs. Conventional Avocado Sales 
+
+```{r}
+renderPlotly({
+  
+options(scipen = 1000000)
+plot1<-ggplot(data = avocado, aes(x = AveragePrice, y = TotalVolume, color = type))+
+      geom_point()+
+      labs(x = "Average Avocado Price", y = "Total Sales", title = "Total Sales Volume by Average Avocado Price", subtitle = "Organic Vs. Conventional", caption = "Kaggle:Avocado Dataset")+
+  scale_y_continuous(labels = scales::dollar)+
+  theme_minimal() +
+  scale_color_manual(values=c("#CCFF66","#333300"))
+
+ggplotly(plot1)
+
+})
+
+```
+
+
+### The Data 
+
+```{r}
+DT::datatable(avocado, options = list(
+  pageLength = 25
+))
+```
+
+
+Row {data-width=350}
+-----------------------------------
+
+  This Data set contains Historical Data on avocado prices and sales volume accross multiple U.S. makets. The dataset was found on Kaggle, while the data originates from the HASS Avocado Board (https://hassavocadoboard.com). 
+
+  Produce 
+
+
+
+Avocado Sales By Region 
+=============================
+Inputs {.sidebar}
+-------------------------------------
+
+```{r}
+inputPanel(
+  selectInput(inputId = "AvocadoSize1",   
+              label = "Avocado Size",
+              choices = unique(avocado$AvocadoSize),
+              multiple = FALSE)
+           )
+```
+
+
+Row 
+--------------------------------------
+
+###Interactive Plot 
+
+```{r}
+renderPlot({
+  
+avocado_region %>%
+    dplyr::filter(AvocadoSize1 %in% input$AvocadoSize1)%>%
+  ggplot(aes(x = reorder(region, -AvocadoVolume), y = AvocadoVolume/1000000, fill = AvocadoSize)) +
+  geom_col(position = "stack") +
+  theme_minimal() +
+  labs(x = "Region", y = "Total Volume (in Milions)") +
+  scale_fill_manual(values = c("#FFFF99","#CCFF66" ,"#333300"), name = "Avocado Size") +
+  ggtitle("Regional Hass Sales", caption= "Kaggle: Avocado Dataset")
+          
+})
+
+```
+
+South Central is the higest purchaser of conventional Hass and small Hass while the Northeast purchase the most large Hass. In comparison to small and large Hass, there is not a high volume of extra large Hass purchases.
+
+Forcasting Sales 
+
+=============================================
+
+Inputs {.sidebar}
+-------------------------------------
+
+```{r}
+inputPanel(
+  selectInput(inputId = "Region",   
+              label = "Regional Sales",
+              choices = unique(avocado_region$region),
+              multiple = TRUE)
+           )
+```
+
+Row
+-------------------------------------
+
+###Total Sales By Region
+```{r}
+renderPlot({
+avocado_region %>% 
+    dplyr::filter(Region == input$Region)%>%
+  filter(type == "conventional") %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = TotalVolume), size = 0.75) +
+  labs(x = "Date", y = "Total Sales", title = "Total Sales By Region", subtitle = "Line Plot", caption = "Kaggle:Avocado Dataset") +
+  theme_light() +
+  theme(panel.border = element_rect(color = "grey35")) +
+  scale_y_continuous(labels = scales::dollar) +
+  geom_smooth(aes(y = TotalVolume), se = F, span = 0.4)
+})
+  
+```
+

@@ -1,0 +1,264 @@
+---
+title: "Final_EDA"
+author: "Emily Ferry"
+date: "2/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(plotly)
+library(gapminder)
+library(ggthemes)
+library(dplyr)
+library(tidyr)
+library(ISLR)
+library(leaflet)
+
+library(RColorBrewer)
+req.packages<-c("leaflet","tidycensus","tidyverse","ggthemes","ggExtra","scales")
+
+# Installations from CRAN
+c("data.table",     # Fast data reading; shift()
+  "dtplyr",         # dplyr done with data.table
+  "forecast",       # forecasting
+  "here",           # Better folder structure
+  "MASS",           # fitdistr()-> the one fun we care about, will give parameteres for the dist. and give info criteria 
+  "MTS",            # Multivariate time series
+  "plotly",         # For 3-d and interactive plots
+  "tidyverse",      # For data manipulation
+  "tseries",        # Some time series functions
+  "xts",            # More time series functions soo much stuff in these last three packages 
+  "zoo"             # Still more time series functions
+  ) -> package_names  
+
+for(package_name in package_names) {
+  if(!is.element(package_name, installed.packages()[,1])) {
+     install.packages(package_name,
+                      repos = "http://cran.mtu.edu/")
+  }
+  library(package_name, character.only=TRUE,
+          quietly=TRUE,verbose=FALSE)
+}
+
+install.packages("tidycensus")
+
+library(tidycensus)
+install.packages("rlang")
+library(rlang)
+
+```
+
+
+```{r cars}
+
+rm(list=ls())
+avo<- fread("avocado.csv", header = TRUE, data.table = FALSE) 
+str(avocado)
+
+#changing date character to a date 
+avo <- avo %>%
+  mutate(date = as.Date(Date, format = "%m/%d/%y"))
+
+avo18<- avo %>% 
+  filter( avo$date >= "2018-01-01")
+
+
+options(scipen = 1000000)
+ggplot(data = avo ,aes(x = AveragePrice, y = totalsales))+
+  geom_point()
+
+
+ggplot(avo, aes(y=AveragePrice,x=year)) +
+  geom_bar()
+
+averaged_avocado <- avo %>%
+  group_by(date, region, type) %>% 
+  summarise(AveragePrice = mean(AveragePrice),
+            totalsales = mean(totalsales),
+            TotalBags = mean(TotalBags))
+averaged_avocado
+
+
+
+avocados
+
+```
+
+```{r}
+color.pal <-colorNumeric(palette ="viridis", domain = avocados$totalsales)
+
+avocados %>%
+  top_n(50,totalsales) %>%
+  rename(region = GEOID) %>% 
+  mutate(region = as.factor(region))
+table(avocados$region)
+
+
+  top_n(20,estimate) %>%
+  rename(county= GEOID)%>%
+  
+
+
+
+
+  ggplot(data=avocados, aes(y = reorder(region,totalsales), x=totalsales))+
+  geom_point()+
+  theme_tufte()+
+  theme(axis.title = element_blank())+
+  scale_x_continuous(labels = scales::dollar)
+  
+  
+  
+  
+  
+  sales.map <- leaflet(data = avocados)%>%
+  addTiles()%>%
+  setView(lng = -77.509, lat= 43.1157,zoom = 8) %>%
+  addPolygons(fillColor = ~color.pal(avocados$totalsales), #addpolygons is the geometry
+             fillOpacity = 0.9,
+             fill= TRUE, 
+             weight =0.7,
+             smoothFactor = 0.3,
+             color = "black",
+             #highlight = highlightOptions(weight = 2,
+                                        #  color = "Black",
+                                         # FillOpacity = 0.9, 
+                                          #bringToFront = FALSE),
+         popup = ~paste("<b>Region: </b>", region, "<br>",
+               "<b>Median Household Income: </b>", dollar(totalsales))
+)%>%
+  addLegend(position = "topleft", 
+            pal = color.pal, 
+            values= ~avocados$totalsales, 
+            title = "Median Income")
+
+
+
+  
+  
+  
+  
+
+
+```
+
+```{r}
+
+
+
+
+```
+
+
+
+```{r}
+options(scipen = 1000000)
+
+options(scipen = 1000000)
+plot1<-ggplot(data = avocado, aes(x = AveragePrice, y = TotalVolume, color = type))+
+      geom_point()+
+      labs(x = "Average Avocado Price", y = "Total Sales", title = "Total Sales Volume by Average Avocado Price", subtitle = "Organic Vs. Conventional", caption = "Kaggle:Avocado Dataset")+
+  scale_y_continuous(labels = scales::dollar)+
+  theme_minimal() +
+  scale_color_manual(values=c("#CCFF66","#333300"))
+
+ggplotly(plot1)
+
+       
+ggplotly(plot1)
+
+
+
+
+
+ggplot(data = data) +
+ geom_point(mapping = aes(x = AveragePrice, y = Total.Volume, color=type))
+
+
+
+
+
+options(scipen = 1000000)
+avocado_region %>% 
+  filter(type == "conventional") %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = TotalVolume), size = 0.75) +
+  labs(x = "Date", y = "Total Sales", title = "Total Sales By Region", subtitle = "Line Plot", caption = "Kaggle:Avocado Dataset") +
+  theme_light() +
+  theme(panel.border = element_rect(color = "grey35")) +
+  scale_y_continuous(labels = scales::dollar) +
+  geom_smooth(aes(y = TotalVolume), se = F, span = 0.4)
+
+
+
+
+
+
+```
+
+```{r}
+ts(avo$totalsales, 
+   start = c(2018,1), frequency = 12)-> avo_ts
+
+plot(avo_ts)
+hist(avo_ts)
+decompose(avo_ts)->dec_avo
+plot(dec_avo)
+avo_ts %>% forecast %>% plot
+
+
+```
+
+```{r}
+
+rm(list=ls())
+avocado<- fread("avocado.csv", header = TRUE, data.table = FALSE) 
+str(avocado)
+
+#changing date character to a date 
+avocado <- avocado %>%
+  mutate(date = as.Date(Date, format = "%m/%d/%y"))
+# convert year to factor
+avocado$year <- as.factor(avocado$year)
+
+# Taking a look at the TotalVolume column, I noticed the TotalBags column was added to the TotalVolume column skewing the actual volume
+# Updating TotalVolume column
+avocado$totalsales <- avocado$totalsales - avocado$TotalBags
+
+# renaming & cleaning up columns
+avocado <- avocado %>% 
+  rename(SmallHass = `4046`, LargeHass = `4225`, XLargeHass = `4770`, TotalVolume = totalsales)%>%
+  gather(AvocadoSize, AvocadoVolume, c(SmallHass, LargeHass, XLargeHass))%>%
+  gather(BagsSize, TotalBags, c(SmallBags, LargeBags, XLargeBags))
+
+# Arranging by Date column       
+avocado <- arrange(avocado, Date)
+
+# Taking a deeper look into region column
+unique(avocado$region)
+
+avocado_region <- avocado %>% filter(region %in% c("California", "GreatLakes", "Midsouth", "Northeast", "Plains", "SouthCentral", "Southeast",  "West"))
+
+# subsetting data by cities
+avocado_city <- avocado %>% filter(!(region %in% c("California", "GreatLakes", "Midsouth", "Northeast", "Plains", "SouthCentral", "Southeast",  "West", "TotalUS")))
+
+# subsetting data by Total US
+avocado_totalUS <- avocado %>% filter(region == "TotalUS")
+
+avocado_region %>%
+  ggplot(aes(x = reorder(region, -AvocadoVolume), y = AvocadoVolume/1000000, fill = AvocadoSize)) +
+  geom_col(position = "stack") +
+  theme_minimal() +
+  labs(x = "Region", y = "Total Volume (in Milions)") +
+  scale_fill_manual(values = c("#FFFF99","#CCFF66" ,"#333300"), name = "Avocado Size") +
+  ggtitle("Regional Single Hass Sales")
+
+
+
+
+
+```
+
