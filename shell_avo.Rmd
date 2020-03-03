@@ -105,8 +105,7 @@ Row {data-width=350}
 -----------------------------------
 
   This Data set contains Historical Data on avocado prices and sales volume accross multiple U.S. makets. The dataset was found on Kaggle, while the data originates from the HASS Avocado Board (https://hassavocadoboard.com). 
-  In recent years, avocado sales have taken off (thanks to Millenials... I myself consumed three avocados in the week and a half I worked on this dashboard...). In fact, with some clever marketing of Guacamole during the NFL, avocados have certainly had their time to shine, By looking at historical sales of produce we can hope to realize some of the following: 
-  -Future demand of a certain product category (ie. small vs. large avocados or organic vs. convential produce)
+   -Future demand of a certain product category (ie. small vs. large avocados or organic vs. convential produce)
   -Future Pricing 
   -Potential growth markets
   -Better informed Marketing Strategies 
@@ -129,11 +128,16 @@ inputPanel(
            )
 ```
 
+Row 
+-----------------------------------
+
+### Regional Hass Sales 
+
 ```{r}
 renderPlot({
   
  avocado_region %>%
-     dplyr::filter(AvocadoSize1 %in% input$AvocadoSize1)%>%
+     dplyr::filter(AvocadoSize %in% input$AvocadoSize1)%>%
   ggplot(aes(x = reorder(region, -AvocadoVolume), y = AvocadoVolume/1000000, fill = AvocadoSize)) +
   geom_col(position = "stack") +
   theme_minimal() +
@@ -158,23 +162,28 @@ inputPanel(
   selectInput(inputId = "Region",
               label = "Regional Sales",
               choices = unique(avocado_region$region),
-              multiple = TRUE)
+              multiple = FALSE)
            )
 ```
+
+Row 
+--------------------------------------
+### Regional Avocado Sales 
 
 ```{r}
 renderPlot({
   
 avocado_region %>% 
-    dplyr::filter(Region == input$Region)%>%
-   filter(type == "conventional") %>%
+  dplyr::filter(region %in% input$Region)%>%
+  filter(type == "conventional") %>%
   ggplot(aes(x = date, y = TotalVolume,color = region)) +
   #geom_line(size = 0.75) +
   labs(x = "Date", y = "Total Sales", title = "Total Sales By Region", subtitle = "Line Plot")+
-  theme_minimal() +
+  theme_light() +
   theme(panel.border = element_rect(color = "grey35")) +
   scale_y_continuous(labels = scales::dollar) +
-  geom_smooth(aes(y = TotalVolume), se = F, span = 0.4)
+  geom_smooth(aes(y = TotalVolume), se = F, span = 0.4)  
+  
 })
   
 ```
